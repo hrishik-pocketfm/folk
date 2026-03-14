@@ -1,0 +1,9 @@
+db.sqlite3
+staticfiles/
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.egg-info/
+dist/
+.DS_Store

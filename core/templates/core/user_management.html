@@ -1,0 +1,95 @@
+{% extends 'core/base.html' %}
+{% block title %}Users — FOLK{% endblock %}
+{% block nav_users %}active{% endblock %}
+
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:10px">
+  <div>
+    <h1 style="margin-bottom:2px"><i class="bi bi-shield-check me-2"></i>Users</h1>
+    <p class="text-muted-spiritual" style="margin:0">Manage app access</p>
+  </div>
+  {% if not add_mode %}
+  <a href="{% url 'user_add' %}" class="btn-gold">
+    <i class="bi bi-plus-lg me-1"></i>Add
+  </a>
+  {% endif %}
+</div>
+
+{% if add_mode %}
+<div class="spiritual-card" style="padding:20px;margin-bottom:20px">
+  <h2 style="margin-bottom:16px"><i class="bi bi-person-plus me-2"></i>New User</h2>
+  <form method="post" autocomplete="off">
+    {% csrf_token %}
+    <div style="margin-bottom:12px">
+      <label class="form-label">Full Name</label>
+      <input type="text" name="name" class="spiritual-input"
+             placeholder="Full name" value="{{ form.name.value|default:'' }}"
+             autocomplete="off">
+      {% if form.name.errors %}
+        <div style="color:#ff9999;font-size:0.8rem;margin-top:4px">{{ form.name.errors.0 }}</div>
+      {% endif %}
+    </div>
+    <div style="margin-bottom:20px">
+      <label class="form-label">Phone Number</label>
+      <input type="tel" name="phone_number" class="spiritual-input"
+             placeholder="Phone number" inputmode="numeric"
+             value="{{ form.phone_number.value|default:'' }}" autocomplete="off">
+      {% if form.phone_number.errors %}
+        <div style="color:#ff9999;font-size:0.8rem;margin-top:4px">{{ form.phone_number.errors.0 }}</div>
+      {% endif %}
+    </div>
+    <div style="display:flex;gap:10px">
+      <button type="submit" class="btn-gold" style="flex:1">
+        <i class="bi bi-check-lg me-1"></i>Create User
+      </button>
+      <a href="{% url 'user_list' %}" class="btn-outline-gold">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+<!-- Users list -->
+<div style="display:flex;flex-direction:column;gap:8px">
+  {% for u in users %}
+  <div class="spiritual-card" style="padding:14px 16px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:42px;height:42px;border-radius:50%;flex-shrink:0;
+                  background:linear-gradient(135deg,#2a1000,#5a2800);
+                  border:1.5px solid rgba(240,165,0,0.25);
+                  display:flex;align-items:center;justify-content:center;
+                  color:#f0a500;font-family:'Cinzel',serif;font-weight:700">
+        {{ u.name|first|upper }}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;color:#fdf0d5;font-size:0.92rem">{{ u.name }}</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);font-family:monospace">
+          {{ u.phone_number }}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        {% if u.is_admin %}
+        <span class="session-badge badge-folk">Admin</span>
+        {% else %}
+        <span style="font-size:0.75rem;color:var(--text-muted)">User</span>
+        {% endif %}
+        {% if u.is_active %}
+        <span style="font-size:0.7rem;color:#6fcf97">
+          <i class="bi bi-circle-fill" style="font-size:0.4rem"></i> Active
+        </span>
+        {% else %}
+        <span style="font-size:0.7rem;color:#eb5757">
+          <i class="bi bi-circle-fill" style="font-size:0.4rem"></i> Inactive
+        </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="spiritual-card" style="padding:30px;text-align:center;color:var(--text-muted)">
+    No users yet.
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

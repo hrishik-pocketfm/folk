@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>{% block title %}FOLK — Spiritual Sessions{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep:       #0f0800;
+      --bg-mid:        #1e0f02;
+      --bg-card:       rgba(255, 240, 200, 0.06);
+      --bg-card-hover: rgba(255, 240, 200, 0.10);
+      --gold:          #f0a500;
+      --gold-light:    #ffd166;
+      --amber:         #e07b00;
+      --violet:        #b07fff;
+      --text:          #fdf0d5;
+      --text-muted:    #b89060;
+      --border:        rgba(240, 165, 0, 0.22);
+      --border-hover:  rgba(240, 165, 0, 0.5);
+      --topbar-h:      58px;
+      --bottomnav-h:   62px;
+      --safe-bottom:   env(safe-area-inset-bottom, 0px);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html { height: 100%; }
+
+    body {
+      background: linear-gradient(160deg, var(--bg-deep) 0%, var(--bg-mid) 100%);
+      min-height: 100vh;
+      font-family: 'Lato', sans-serif;
+      color: var(--text);
+      margin: 0;
+      /* fixed height chrome fix */
+      overscroll-behavior: none;
+    }
+
+    /* ── Top Bar ── */
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--topbar-h);
+      background: rgba(10, 5, 0, 0.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      z-index: 100;
+    }
+    .topbar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .topbar-logo img {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 0 6px rgba(240,165,0,0.3));
+    }
+    .topbar-brand {
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 3px;
+    }
+    .topbar-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .topbar-name {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      max-width: 100px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .btn-logout {
+      background: transparent;
+      border: 1px solid rgba(240, 165, 0, 0.3);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-logout:hover, .btn-logout:active { border-color: var(--gold); color: var(--gold); }
+
+    /* ── Bottom Tab Bar ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: calc(var(--bottomnav-h) + var(--safe-bottom));
+      background: rgba(10, 5, 0, 0.95);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: flex-start;
+      padding-top: 6px;
+      padding-bottom: var(--safe-bottom);
+      z-index: 100;
+    }
+    .bottom-nav a {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.62rem;
+      letter-spacing: 0.3px;
+      padding: 4px 0;
+      transition: color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bottom-nav a i {
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+    .bottom-nav a.active, .bottom-nav a:active {
+      color: var(--gold);
+    }
+    .bottom-nav a.active i {
+      filter: drop-shadow(0 0 6px rgba(240,165,0,0.5));
+    }
+
+    /* ── Main content area ── */
+    .page-wrap {
+      padding: calc(var(--topbar-h) + 14px) 14px calc(var(--bottomnav-h) + var(--safe-bottom) + 16px);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* ── Cards ── */
+    .spiritual-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      backdrop-filter: blur(4px);
+    }
+    a .spiritual-card { transition: border-color 0.2s; }
+    a:active .spiritual-card { border-color: var(--border-hover); background: var(--bg-card-hover); }
+
+    /* ── Headings ── */
+    h1, h2, h3 { font-family: 'Cinzel', serif; }
+    h1 { color: var(--gold); font-size: 1.5rem; font-weight: 600; margin-bottom: 4px; }
+    h2 { color: var(--gold-light); font-size: 1.15rem; }
+    h3 { color: var(--text); font-size: 1rem; }
+
+    /* ── Buttons ── */
+    .btn-gold {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--gold), var(--amber));
+      color: #1a0a00;
+      font-weight: 700;
+      border: none;
+      border-radius: 25px;
+      padding: 0.6rem 1.6rem;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      text-decoration: none;
+      min-height: 44px;
+      transition: opacity 0.15s;
+    }
+    .btn-gold:active { opacity: 0.8; color: #1a0a00; }
+    .btn-gold.w-100 { width: 100%; padding: 0.75rem; font-size: 1rem; border-radius: 14px; }
+
+    .btn-outline-gold {
+      display: inline-flex;
+      align-items: center;
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      border-radius: 25px;
+      padding: 0.5rem 1.2rem;
+      font-size: 0.85rem;
+      text-decoration: none;
+      min-height: 40px;
+      transition: background 0.15s;
+    }
+    .btn-outline-gold:active { background: rgba(240,165,0,0.12); color: var(--gold-light); }
+
+    /* ── Forms ── */
+    .spiritual-input {
+      background: rgba(255, 240, 200, 0.07) !important;
+      border: 1px solid var(--border) !important;
+      color: var(--text) !important;
+      border-radius: 12px !important;
+      /* 16px prevents iOS auto-zoom */
+      font-size: 16px !important;
+      padding: 0.7rem 0.9rem !important;
+      width: 100%;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .spiritual-input:focus {
+      border-color: var(--gold) !important;
+      box-shadow: 0 0 0 3px rgba(240,165,0,0.15) !important;
+      background: rgba(255,240,200,0.10) !important;
+    }
+    .spiritual-input::placeholder { color: var(--text-muted) !important; }
+    select.spiritual-input { background-image: none !important; }
+    textarea.spiritual-input { resize: vertical; }
+    .form-select.spiritual-input option { background: #1e0f02; color: var(--text); }
+
+    .form-label {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+
+    /* ── Session badges ── */
+    .badge-l1   { background: linear-gradient(135deg,#c8860a,#f0a500); color:#1a0a00; }
+    .badge-l2   { background: linear-gradient(135deg,#a05c00,#e07b00); color:#fff; }
+    .badge-l3   { background: linear-gradient(135deg,#7a3b00,#b85500); color:#ffd; }
+    .badge-folk { background: linear-gradient(135deg,#5e2b8a,#9d4edd); color:#fff; }
+    .session-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin: 2px;
+    }
+
+    /* ── Alerts ── */
+    .alert-spiritual {
+      background: rgba(240,165,0,0.10);
+      border: 1px solid rgba(240,165,0,0.3);
+      color: var(--gold-light);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      font-size: 0.88rem;
+    }
+    .alert-error-spiritual {
+      background: rgba(200,50,50,0.12);
+      border: 1px solid rgba(200,80,80,0.35);
+      color: #ff9999;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      font-size: 0.88rem;
+    }
+
+    /* ── Misc ── */
+    .text-muted-spiritual { color: var(--text-muted); font-size: 0.82rem; }
+    .section-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .mandala-divider {
+      text-align: center;
+      color: var(--border);
+      font-size: 1rem;
+      letter-spacing: 8px;
+      margin: 1.2rem 0;
+    }
+
+    /* ── Spiritual table (mobile-friendly stacked) ── */
+    .s-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+    .s-table th {
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .s-table td {
+      background: var(--bg-card);
+      padding: 11px 12px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+    .s-table tr td:first-child { border-left: 1px solid var(--border); border-radius: 10px 0 0 10px; }
+    .s-table tr td:last-child  { border-right: 1px solid var(--border); border-radius: 0 10px 10px 0; }
+  </style>
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<!-- Top Bar -->
+<header class="topbar">
+  <a class="topbar-logo" href="{% url 'dashboard' %}">
+    <img src="https://hkmraipur.org/wp-content/uploads/2025/04/HKM-Raipur-Web-Logo-1536-x-921-1.jpg.webp"
+         alt="HKM Raipur" onerror="this.style.display='none'">
+    <span class="topbar-brand">FOLK</span>
+  </a>
+  <div class="topbar-user">
+    <span class="topbar-name"><i class="bi bi-person-circle me-1"></i>{{ user.name }}</span>
+    <form method="post" action="{% url 'logout' %}" style="margin:0">
+      {% csrf_token %}
+      <button type="submit" class="btn-logout">Logout</button>
+    </form>
+  </div>
+</header>
+{% endif %}
+
+<!-- Content -->
+<div class="page-wrap">
+  {% for message in messages %}
+    <div class="{% if message.tags == 'error' %}alert-error-spiritual{% else %}alert-spiritual{% endif %}">
+      {{ message }}
+    </div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</div>
+
+{% if user.is_authenticated %}
+<!-- Bottom Tab Bar -->
+<nav class="bottom-nav">
+  <a href="{% url 'dashboard' %}" class="{% block nav_dashboard %}{% endblock %}">
+    <i class="bi bi-people"></i>Students
+  </a>
+  <a href="{% url 'add_student' %}" class="{% block nav_add %}{% endblock %}">
+    <i class="bi bi-person-plus"></i>Add
+  </a>
+  <a href="{% url 'recommender' %}" class="{% block nav_recommender %}{% endblock %}">
+    <i class="bi bi-stars"></i>Recommender
+  </a>
+  {% if user.is_admin %}
+  <a href="{% url 'user_list' %}" class="{% block nav_users %}{% endblock %}">
+    <i class="bi bi-shield-check"></i>Users
+  </a>
+  {% endif %}
+</nav>
+{% endif %}
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,112 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ student.name }} — FOLK{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+
+<!-- Back -->
+<a href="{% url 'dashboard' %}" class="btn-outline-gold" style="margin-bottom:16px;display:inline-flex">
+  <i class="bi bi-arrow-left me-1"></i>Back
+</a>
+
+<!-- Student Info Card -->
+<div class="spiritual-card" style="padding:18px;margin-bottom:14px">
+  <div style="display:flex;align-items:center;gap:14px">
+    <div style="width:56px;height:56px;border-radius:50%;flex-shrink:0;
+                background:linear-gradient(135deg,#3d1c00,#7a3b00);
+                border:2px solid rgba(240,165,0,0.35);
+                display:flex;align-items:center;justify-content:center;
+                font-family:'Cinzel',serif;color:#f0a500;font-size:1.4rem;font-weight:700">
+      {{ student.name|first|upper }}
+    </div>
+    <div style="flex:1;min-width:0">
+      <h1 style="font-size:1.25rem;margin-bottom:4px;
+                 white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+        {{ student.name }}
+      </h1>
+      <div style="display:flex;flex-direction:column;gap:3px">
+        {% if student.phone_number %}
+        <span class="text-muted-spiritual">
+          <i class="bi bi-telephone me-1"></i>{{ student.phone_number }}
+        </span>
+        {% endif %}
+        {% if student.occupation %}
+        <span class="text-muted-spiritual">
+          <i class="bi bi-briefcase me-1"></i>{{ student.occupation }}
+        </span>
+        {% endif %}
+        <span class="text-muted-spiritual">
+          <i class="bi bi-person me-1"></i>Added by {{ student.created_by.name|default:"—" }}
+          &nbsp;·&nbsp; {{ student.created_at|date:"d M Y" }}
+        </span>
+      </div>
+    </div>
+  </div>
+  {% if student.notes %}
+  <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);
+              color:var(--text-muted);font-size:0.85rem;font-style:italic">
+    "{{ student.notes }}"
+  </div>
+  {% endif %}
+</div>
+
+<!-- Sessions Card -->
+<div class="spiritual-card" style="padding:18px;margin-bottom:14px">
+  <h2 style="margin-bottom:14px"><i class="bi bi-journal-bookmark me-2"></i>Sessions Attended</h2>
+
+  {% if sessions %}
+  <div style="display:flex;flex-direction:column;gap:8px">
+    {% for sess in sessions %}
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                background:var(--bg-card);border:1px solid var(--border);
+                border-radius:12px;padding:12px 14px">
+      <span class="session-badge
+        {% if sess.session_type == 'L1' %}badge-l1
+        {% elif sess.session_type == 'L2' %}badge-l2
+        {% elif sess.session_type == 'L3' %}badge-l3
+        {% else %}badge-folk
+        {% endif %}" style="font-size:0.75rem">
+        {{ sess.get_session_type_display }}
+      </span>
+      <div style="text-align:right">
+        <div style="font-size:0.85rem;color:var(--text)">{{ sess.date_attended|date:"d M Y" }}</div>
+        <div style="font-size:0.72rem;color:var(--text-muted)">{{ sess.added_by.name|default:"—" }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:24px 0;color:var(--text-muted)">
+    <i class="bi bi-journal-x" style="font-size:2rem;display:block;margin-bottom:8px"></i>
+    No sessions recorded yet
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add Session Card -->
+<div class="spiritual-card" style="padding:18px">
+  <h3 style="margin-bottom:16px">
+    <i class="bi bi-plus-circle me-2" style="color:var(--gold)"></i>Add Session
+  </h3>
+  <form method="post" action="{% url 'add_session' student.pk %}">
+    {% csrf_token %}
+    <div style="margin-bottom:12px">
+      <label class="form-label">Session Type</label>
+      <select name="session_type" class="spiritual-input" style="color-scheme:dark">
+        {% for value, label in session_choices %}
+        <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="margin-bottom:16px">
+      <label class="form-label">Date Attended</label>
+      <input type="date" name="date_attended" class="spiritual-input"
+             style="color-scheme:dark" required>
+    </div>
+    <button type="submit" class="btn-gold w-100">
+      <i class="bi bi-check-lg me-1"></i>Add Session
+    </button>
+  </form>
+</div>
+
+{% endblock %}

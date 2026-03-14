@@ -1,0 +1,85 @@
+{% extends 'core/base.html' %}
+{% block title %}Students — FOLK{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+
+<!-- Search bar -->
+<form method="get" class="mb-3">
+  <div style="display:flex;gap:8px">
+    <input type="text" name="q" value="{{ query }}" class="spiritual-input"
+           placeholder="Search students…" style="flex:1;min-width:0">
+    <button type="submit" class="btn-gold" style="padding:0 18px;border-radius:12px;flex-shrink:0">
+      <i class="bi bi-search"></i>
+    </button>
+  </div>
+</form>
+
+{% if query %}
+<p class="text-muted-spiritual mb-3">Results for "{{ query }}" — <a href="{% url 'dashboard' %}" style="color:var(--gold)">Clear</a></p>
+{% endif %}
+
+{% if students %}
+<div style="display:flex;flex-direction:column;gap:10px">
+  {% for student in students %}
+  <a href="{% url 'student_profile' student.pk %}" style="text-decoration:none">
+    <div class="spiritual-card" style="padding:14px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <!-- Avatar -->
+        <div style="width:48px;height:48px;border-radius:50%;flex-shrink:0;
+                    background:linear-gradient(135deg,#3d1c00,#7a3b00);
+                    border:1.5px solid rgba(240,165,0,0.3);
+                    display:flex;align-items:center;justify-content:center;
+                    font-family:'Cinzel',serif;color:#f0a500;font-size:1.15rem;font-weight:700">
+          {{ student.name|first|upper }}
+        </div>
+        <!-- Info -->
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;color:#fdf0d5;font-size:0.97rem;
+                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            {{ student.name }}
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
+            {% if student.phone_number %}
+            <span class="text-muted-spiritual" style="font-size:0.78rem">
+              <i class="bi bi-telephone"></i> {{ student.phone_number }}
+            </span>
+            {% endif %}
+            {% if student.occupation %}
+            <span class="text-muted-spiritual" style="font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">
+              <i class="bi bi-briefcase"></i> {{ student.occupation }}
+            </span>
+            {% endif %}
+          </div>
+          <div style="margin-top:6px">
+            {% for sess in student.sessions.all %}
+              {% if sess.session_type == 'L1' %}<span class="session-badge badge-l1">VS L1</span>
+              {% elif sess.session_type == 'L2' %}<span class="session-badge badge-l2">VS L2</span>
+              {% elif sess.session_type == 'L3' %}<span class="session-badge badge-l3">VS L3</span>
+              {% elif sess.session_type == 'FOLK' %}<span class="session-badge badge-folk">FOLK</span>
+              {% endif %}
+            {% empty %}
+              <span style="font-size:0.72rem;color:var(--text-muted)">No sessions yet</span>
+            {% endfor %}
+          </div>
+        </div>
+        <i class="bi bi-chevron-right" style="color:var(--text-muted);font-size:0.85rem;flex-shrink:0"></i>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="spiritual-card" style="padding:40px 20px;text-align:center">
+  <div style="font-size:3rem;margin-bottom:12px">🪷</div>
+  <h3 style="color:var(--text-muted)">
+    {% if query %}No results for "{{ query }}"{% else %}No students yet{% endif %}
+  </h3>
+  {% if not query %}
+  <p class="text-muted-spiritual">Tap "Add" below to add your first student.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

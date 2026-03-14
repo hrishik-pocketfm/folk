@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Login — FOLK</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --gold: #f0a500;
+      --gold-light: #ffd166;
+      --amber: #e07b00;
+      --text: #fdf0d5;
+      --text-muted: #b89060;
+      --border: rgba(240, 165, 0, 0.25);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 50% 20%, #3d1c00 0%, #180900 45%, #080300 100%);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Lato', sans-serif;
+      color: var(--text);
+      margin: 0;
+      padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0)
+               env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+    }
+
+    .login-wrap {
+      width: 100%;
+      max-width: 420px;
+      padding: 24px 20px;
+    }
+
+    /* Logo */
+    .brand-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .brand-logo {
+      width: min(220px, 70vw);
+      height: auto;
+      display: block;
+      margin: 0 auto 16px;
+      filter: drop-shadow(0 0 20px rgba(240,165,0,0.25));
+    }
+    .brand-name {
+      font-family: 'Cinzel', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 6px;
+      margin-bottom: 4px;
+    }
+    .brand-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    /* Card */
+    .login-card {
+      background: rgba(255, 240, 200, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 28px 24px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .login-card h2 {
+      font-family: 'Cinzel', serif;
+      color: var(--gold-light);
+      font-size: 1rem;
+      text-align: center;
+      margin: 0 0 24px;
+      letter-spacing: 0.5px;
+    }
+
+    .form-label {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .spiritual-input {
+      width: 100%;
+      background: rgba(255,240,200,0.07);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 14px;
+      /* 16px prevents iOS auto-zoom */
+      font-size: 16px;
+      padding: 14px 16px;
+      letter-spacing: 2px;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .spiritual-input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(240,165,0,0.15);
+      background: rgba(255,240,200,0.10);
+    }
+    .spiritual-input::placeholder { color: rgba(184,144,96,0.5); letter-spacing: 1px; font-size: 0.9rem; }
+
+    .btn-login {
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold), var(--amber));
+      color: #1a0a00;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      margin-top: 8px;
+      cursor: pointer;
+      font-family: 'Cinzel', serif;
+      transition: opacity 0.15s;
+      min-height: 52px;
+    }
+    .btn-login:active { opacity: 0.8; }
+
+    .error-msg {
+      background: rgba(200,50,50,0.12);
+      border: 1px solid rgba(200,80,80,0.35);
+      color: #ff9999;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.83rem;
+      margin-top: 8px;
+    }
+    .footer-note {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      margin-top: 20px;
+      letter-spacing: 0.4px;
+      line-height: 1.6;
+    }
+    .divider {
+      text-align: center;
+      color: rgba(240,165,0,0.2);
+      letter-spacing: 8px;
+      margin: 20px 0 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="brand-header">
+      <img class="brand-logo"
+           src="https://hkmraipur.org/wp-content/uploads/2025/04/HKM-Raipur-Web-Logo-1536-x-921-1.jpg.webp"
+           alt="HKM Raipur"
+           onerror="this.style.display='none'">
+      <div class="brand-name">FOLK</div>
+      <div class="brand-sub">Spiritual Sessions</div>
+    </div>
+
+    <div class="login-card">
+      <h2>Enter Your Phone Number</h2>
+      <form method="post" autocomplete="off">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label">Phone Number</label>
+          <input type="tel" name="phone_number" class="spiritual-input"
+                 placeholder="e.g. 9876543210"
+                 inputmode="numeric" autocomplete="tel"
+                 value="{{ form.phone_number.value|default:'' }}">
+          {% if form.phone_number.errors %}
+            <div class="error-msg">{{ form.phone_number.errors.0 }}</div>
+          {% endif %}
+        </div>
+        <button type="submit" class="btn-login">Continue →</button>
+      </form>
+      <div class="divider">· · ·</div>
+      <div class="footer-note">Enter the phone number registered with your account</div>
+    </div>
+  </div>
+</body>
+</html>
