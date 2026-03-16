@@ -1,6 +1,15 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.conf import settings
+from django.db.models import Case, When, Value, IntegerField
+
+RATING_SORT = Case(
+    When(rating='HIGH',   then=Value(0)),
+    When(rating='MEDIUM', then=Value(1)),
+    When(rating='LOW',    then=Value(2)),
+    default=Value(3),
+    output_field=IntegerField(),
+)
 
 
 class UserManager(BaseUserManager):
@@ -42,12 +51,19 @@ SESSION_CHOICES = [
     ('FOLK', 'FOLK Sessions'),
 ]
 
+RATING_CHOICES = [
+    ('HIGH', 'High'),
+    ('MEDIUM', 'Medium'),
+    ('LOW', 'Low'),
+]
+
 
 class Student(models.Model):
     name = models.CharField(max_length=150)
     phone_number = models.CharField(max_length=15, blank=True)
     occupation = models.TextField(blank=True)
     notes = models.TextField(blank=True)
+    rating = models.CharField(max_length=10, choices=RATING_CHOICES, default='MEDIUM')
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -79,7 +95,8 @@ class StudentSession(models.Model):
     )
 
     class Meta:
-        unique_together = ('student', 'session_type')
+        # unique_together removed: FOLK is a continuous program (multiple attendances allowed).
+        # Uniqueness for L1/L2/L3 is enforced in the view layer.
         ordering = ['date_attended']
 
     def __str__(self):

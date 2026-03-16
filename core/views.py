@@ -4,9 +4,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db import IntegrityError
 
-from .models import User, Student, StudentSession, SESSION_CHOICES
+from .models import User, Student, StudentSession, SESSION_CHOICES, RATING_CHOICES, RATING_SORT
 from .forms import LoginForm, StudentForm, AddSessionForm, UserCreateForm
 
 
@@ -23,12 +22,19 @@ def admin_required(view_func):
 
 # ─── Recommender helper ───────────────────────────────────────────────────────
 
-def get_recommendations(session_type):
-    attended_L1 = set(StudentSession.objects.filter(session_type='L1').values_list('student_id', flat=True))
-    attended_L2 = set(StudentSession.objects.filter(session_type='L2').values_list('student_id', flat=True))
-    attended_L3 = set(StudentSession.objects.filter(session_type='L3').values_list('student_id', flat=True))
-    attended_FOLK = set(StudentSession.objects.filter(session_type='FOLK').values_list('student_id', flat=True))
-    all_ids = set(Student.objects.values_list('pk', flat=True))
+def get_recommendations(session_type, user):
+    # Scope to this user's students only
+    user_student_ids = set(
+        Student.objects.filter(created_by=user).values_list('pk', flat=True)
+    )
+
+    attended_L1   = set(StudentSession.objects.filter(session_type='L1',   student_id__in=user_student_ids).values_list('student_id', flat=True))
+    attended_L2   = set(StudentSession.objects.filter(session_type='L2',   student_id__in=user_student_ids).values_list('student_id', flat=True))
+    attended_L3   = set(StudentSession.objects.filter(session_type='L3',   student_id__in=user_student_ids).values_list('student_id', flat=True))
+    # FOLK attended = students who have at least one FOLK session
+    attended_FOLK = set(StudentSession.objects.filter(session_type='FOLK', student_id__in=user_student_ids).values_list('student_id', flat=True))
+
+    all_ids = user_student_ids
 
     if session_type == 'L1':
         eligible = all_ids - attended_L1
@@ -64,8 +70,10 @@ def get_recommendations(session_type):
         ]
 
     elif session_type == 'FOLK':
+        # FOLK is continuous — eligible = attended 2+ Vedic Science sessions
+        # (no exclusion of students who already attended FOLK)
         eligible = {
-            sid for sid in (all_ids - attended_FOLK)
+            sid for sid in all_ids
             if sum([sid in attended_L1, sid in attended_L2, sid in attended_L3]) >= 2
         }
         tier1, tier2, tier3 = eligible, set(), set()
@@ -77,7 +85,11 @@ def get_recommendations(session_type):
     groups = []
     for ids, label in zip([tier1, tier2, tier3], labels):
         if ids and label:
-            qs = Student.objects.filter(pk__in=ids).order_by('name')
+            # Sort by rating HIGH→MEDIUM→LOW, then by name
+            qs = (Student.objects
+                  .filter(pk__in=ids)
+                  .annotate(rating_order=RATING_SORT)
+                  .order_by('rating_order', 'name'))
             groups.append((label, qs))
     return groups
 
@@ -107,10 +119,13 @@ def logout_view(request):
 @login_required
 def dashboard(request):
     query = request.GET.get('q', '').strip()
-    students = Student.objects.select_related('created_by').prefetch_related('sessions')
+    # Only show students added by the logged-in user
+    students = (Student.objects
+                .filter(created_by=request.user)
+                .prefetch_related('sessions')
+                .order_by('-created_at'))
     if query:
         students = students.filter(name__icontains=query)
-    students = students.order_by('-created_at')
     return render(request, 'core/dashboard.html', {'students': students, 'query': query})
 
 
@@ -134,12 +149,17 @@ def add_student(request):
             return redirect('student_profile', pk=student.pk)
     else:
         form = StudentForm()
-    return render(request, 'core/add_student.html', {'form': form, 'session_choices': SESSION_CHOICES})
+    return render(request, 'core/add_student.html', {
+        'form': form,
+        'session_choices': SESSION_CHOICES,
+        'ratings': RATING_CHOICES,
+    })
 
 
 @login_required
 def student_profile(request, pk):
-    student = get_object_or_404(Student, pk=pk)
+    # Users can only view their own students
+    student = get_object_or_404(Student, pk=pk, created_by=request.user)
     sessions = student.sessions.select_related('added_by').order_by('date_attended')
     add_form = AddSessionForm()
     return render(request, 'core/student_profile.html', {
@@ -152,19 +172,32 @@ def student_profile(request, pk):
 
 @login_required
 def add_session(request, pk):
-    student = get_object_or_404(Student, pk=pk)
+    student = get_object_or_404(Student, pk=pk, created_by=request.user)
     if request.method == 'POST':
         form = AddSessionForm(request.POST)
         if form.is_valid():
+            session_type = form.cleaned_data['session_type']
+            # For L1/L2/L3, enforce one session per type per student
+            if session_type != 'FOLK':
+                if StudentSession.objects.filter(student=student, session_type=session_type).exists():
+                    messages.error(request, f'"{student.name}" has already attended {dict(SESSION_CHOICES)[session_type]}.')
+                    return redirect('student_profile', pk=pk)
             session = form.save(commit=False)
             session.student = student
             session.added_by = request.user
-            try:
-                session.save()
-                messages.success(request, f'Session added for {student.name}.')
-            except IntegrityError:
-                messages.error(request, 'This session type is already recorded for this student.')
+            session.save()
+            messages.success(request, f'Session added for {student.name}.')
     return redirect('student_profile', pk=pk)
+
+
+@login_required
+def delete_student(request, pk):
+    student = get_object_or_404(Student, pk=pk, created_by=request.user)
+    if request.method == 'POST':
+        name = student.name
+        student.delete()
+        messages.success(request, f'Student "{name}" deleted.')
+    return redirect('dashboard')
 
 
 @login_required
@@ -173,7 +206,7 @@ def recommender(request):
     groups = []
     valid_types = dict(SESSION_CHOICES)
     if session_type in valid_types:
-        groups = get_recommendations(session_type)
+        groups = get_recommendations(session_type, request.user)
     return render(request, 'core/recommender.html', {
         'session_choices': SESSION_CHOICES,
         'selected_session': session_type,

@@ -4,10 +4,44 @@
 
 {% block content %}
 
-<!-- Back -->
-<a href="{% url 'dashboard' %}" class="btn-outline-gold" style="margin-bottom:16px;display:inline-flex">
-  <i class="bi bi-arrow-left me-1"></i>Back
-</a>
+<!-- Back + Delete -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+  <a href="{% url 'dashboard' %}" class="btn-outline-gold">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+  <button onclick="document.getElementById('del-modal').style.display='flex'"
+          style="background:rgba(200,50,50,0.12);border:1px solid rgba(200,80,80,0.35);
+                 color:#ff9999;border-radius:25px;padding:8px 16px;font-size:0.82rem;cursor:pointer;
+                 min-height:40px">
+    <i class="bi bi-trash me-1"></i>Delete
+  </button>
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="del-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+     z-index:200;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1e0f02;border:1px solid rgba(200,80,80,0.4);border-radius:18px;
+              padding:28px 24px;max-width:340px;width:100%;text-align:center">
+    <div style="font-size:2rem;margin-bottom:10px">⚠️</div>
+    <h3 style="color:#ff9999;margin-bottom:8px">Delete Student?</h3>
+    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:24px">
+      "{{ student.name }}" and all their session records will be permanently deleted.
+    </p>
+    <div style="display:flex;gap:10px">
+      <button onclick="document.getElementById('del-modal').style.display='none'"
+              class="btn-outline-gold" style="flex:1">Cancel</button>
+      <form method="post" action="{% url 'delete_student' student.pk %}" style="flex:1">
+        {% csrf_token %}
+        <button type="submit"
+                style="width:100%;background:rgba(200,50,50,0.25);border:1px solid rgba(200,80,80,0.5);
+                       color:#ff9999;border-radius:25px;padding:10px;font-size:0.9rem;
+                       font-weight:700;cursor:pointer;min-height:44px">
+          Yes, Delete
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
 
 <!-- Student Info Card -->
 <div class="spiritual-card" style="padding:18px;margin-bottom:14px">
@@ -20,10 +54,25 @@
       {{ student.name|first|upper }}
     </div>
     <div style="flex:1;min-width:0">
-      <h1 style="font-size:1.25rem;margin-bottom:4px;
-                 white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-        {{ student.name }}
-      </h1>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <h1 style="font-size:1.25rem;margin:0;
+                   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">
+          {{ student.name }}
+        </h1>
+        {% if student.rating == 'HIGH' %}
+          <span style="font-size:0.7rem;font-weight:700;color:#ff6b35;
+                       background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.3);
+                       border-radius:8px;padding:2px 8px;flex-shrink:0;white-space:nowrap">🔥 High</span>
+        {% elif student.rating == 'MEDIUM' %}
+          <span style="font-size:0.7rem;font-weight:700;color:var(--gold);
+                       background:rgba(240,165,0,0.1);border:1px solid rgba(240,165,0,0.25);
+                       border-radius:8px;padding:2px 8px;flex-shrink:0;white-space:nowrap">⭐ Medium</span>
+        {% elif student.rating == 'LOW' %}
+          <span style="font-size:0.7rem;font-weight:700;color:#6fcf97;
+                       background:rgba(111,207,151,0.1);border:1px solid rgba(111,207,151,0.25);
+                       border-radius:8px;padding:2px 8px;flex-shrink:0;white-space:nowrap">🌱 Low</span>
+        {% endif %}
+      </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         {% if student.phone_number %}
         <span class="text-muted-spiritual">

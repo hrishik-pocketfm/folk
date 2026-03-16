@@ -39,10 +39,37 @@
     </div>
 
     <!-- Notes -->
-    <div style="margin-bottom:20px">
+    <div style="margin-bottom:14px">
       <label class="form-label">Notes</label>
       <textarea name="notes" class="spiritual-input" rows="2"
                 placeholder="Any notes…">{{ form.notes.value|default:'' }}</textarea>
+    </div>
+
+    <!-- Rating -->
+    <div style="margin-bottom:20px">
+      <label class="form-label">Interest Rating</label>
+      <div style="display:flex;gap:8px">
+        {% for val, lbl in ratings %}
+        <label style="flex:1;cursor:pointer">
+          <input type="radio" name="rating" value="{{ val }}" class="rating-radio"
+                 style="display:none"
+                 {% if val == 'MEDIUM' %}checked{% endif %}>
+          <div class="rating-card spiritual-card" data-val="{{ val }}"
+               style="padding:10px 6px;text-align:center;border-radius:12px;
+                      {% if val == 'MEDIUM' %}border-color:var(--gold);background:rgba(240,165,0,0.12){% endif %}">
+            <div style="font-size:1.1rem;margin-bottom:2px">
+              {% if val == 'HIGH' %}🔥{% elif val == 'MEDIUM' %}⭐{% else %}🌱{% endif %}
+            </div>
+            <div style="font-size:0.72rem;font-weight:700;
+              {% if val == 'HIGH' %}color:#ff6b35
+              {% elif val == 'MEDIUM' %}color:var(--gold)
+              {% else %}color:#6fcf97{% endif %}">
+              {{ lbl }}
+            </div>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
     </div>
 
     <!-- Sessions -->
@@ -89,17 +116,36 @@
 
 {% block extra_js %}
 <script>
+  // Session checkboxes
   document.querySelectorAll('.sess-label').forEach(function(lbl) {
     var cb   = lbl.querySelector('.sess-check');
     var card = lbl.querySelector('.sess-card');
-    function update() {
-      card.style.borderColor  = cb.checked ? 'var(--gold)' : '';
-      card.style.background   = cb.checked ? 'rgba(240,165,0,0.14)' : '';
-    }
     lbl.addEventListener('click', function(e) {
       e.preventDefault();
       cb.checked = !cb.checked;
-      update();
+      card.style.borderColor = cb.checked ? 'var(--gold)' : '';
+      card.style.background  = cb.checked ? 'rgba(240,165,0,0.14)' : '';
+    });
+  });
+
+  // Rating radio toggle
+  document.querySelectorAll('.rating-radio').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      document.querySelectorAll('.rating-card').forEach(function(c) {
+        c.style.borderColor = '';
+        c.style.background  = '';
+      });
+      var card = this.closest('label').querySelector('.rating-card');
+      card.style.borderColor = 'var(--gold)';
+      card.style.background  = 'rgba(240,165,0,0.12)';
+    });
+  });
+  // Tapping the card itself
+  document.querySelectorAll('.rating-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      var radio = this.closest('label').querySelector('.rating-radio');
+      radio.checked = true;
+      radio.dispatchEvent(new Event('change'));
     });
   });
 </script>
