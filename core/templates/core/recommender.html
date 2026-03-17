@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load folk_tags %}
 {% block title %}Recommender — FOLK{% endblock %}
 {% block nav_recommender %}active{% endblock %}
 
@@ -108,7 +109,7 @@
                       font-weight:700;text-decoration:none;min-height:36px">
               <i class="bi bi-telephone-fill"></i> Call
             </a>
-            <a href="https://wa.me/91{{ student.phone_number|slice:'-10' }}"
+            <a href="https://wa.me/{{ student.phone_number|wa_number }}"
                target="_blank"
                style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
                       background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);
