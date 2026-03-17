@@ -81,6 +81,18 @@ class Student(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def wa_number(self):
+        """Return WhatsApp-ready 12-digit Indian number (e.g. 918999145848)."""
+        digits = ''.join(c for c in self.phone_number if c.isdigit())
+        if len(digits) == 10:
+            return '91' + digits
+        if len(digits) == 11 and digits.startswith('0'):
+            return '91' + digits[1:]
+        if len(digits) == 12 and digits.startswith('91'):
+            return digits
+        return '91' + digits[-10:] if len(digits) >= 10 else digits
+
     def attended_session_types(self):
         return set(self.sessions.values_list('session_type', flat=True))
 
