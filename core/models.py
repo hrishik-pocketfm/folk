@@ -3,6 +3,12 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.conf import settings
 from django.db.models import Case, When, Value, IntegerField
 
+RATING_PRIORITY = {'HIGH': 3, 'MEDIUM': 2, 'LOW': 1}
+
+def higher_rating(r1, r2):
+    """Return whichever rating is higher (HIGH beats MEDIUM beats LOW)."""
+    return r1 if RATING_PRIORITY.get(r1, 0) >= RATING_PRIORITY.get(r2, 0) else r2
+
 RATING_SORT = Case(
     When(rating='HIGH',   then=Value(0)),
     When(rating='MEDIUM', then=Value(1)),

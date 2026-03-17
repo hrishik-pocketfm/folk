@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
-from .models import User, Student, StudentSession, SESSION_CHOICES, RATING_CHOICES, RATING_SORT
+from .models import User, Student, StudentSession, SESSION_CHOICES, RATING_CHOICES, RATING_SORT, higher_rating
 from .forms import LoginForm, StudentForm, AddSessionForm, UserCreateForm
 
 
@@ -129,22 +129,64 @@ def dashboard(request):
     return render(request, 'core/dashboard.html', {'students': students, 'query': query})
 
 
+def _apply_sessions(student, session_types, session_date, added_by):
+    """Add sessions to a student, enforcing uniqueness for L1/L2/L3."""
+    for s_type in session_types:
+        if s_type != 'FOLK':
+            if not StudentSession.objects.filter(student=student, session_type=s_type).exists():
+                StudentSession.objects.create(
+                    student=student, session_type=s_type,
+                    date_attended=session_date, added_by=added_by
+                )
+        else:
+            StudentSession.objects.create(
+                student=student, session_type='FOLK',
+                date_attended=session_date, added_by=added_by
+            )
+
+
 @login_required
 def add_student(request):
     if request.method == 'POST':
         form = StudentForm(request.POST)
         if form.is_valid():
-            student = form.save(commit=False)
-            student.created_by = request.user
-            student.save()
+            phone = form.cleaned_data.get('phone_number', '').strip()
             sessions = form.cleaned_data.get('sessions', [])
             session_date = form.cleaned_data.get('session_date') or date.today()
-            for s_type in sessions:
-                StudentSession.objects.get_or_create(
-                    student=student,
-                    session_type=s_type,
-                    defaults={'date_attended': session_date, 'added_by': request.user}
+            new_rating = request.POST.get('rating', 'MEDIUM')
+            new_name = form.cleaned_data['name']
+            new_occupation = form.cleaned_data.get('occupation', '')
+            new_notes = form.cleaned_data.get('notes', '')
+
+            # ── Merge if phone matches an existing student for this user ──
+            existing = None
+            if phone:
+                existing = Student.objects.filter(
+                    phone_number=phone, created_by=request.user
+                ).first()
+
+            if existing:
+                # Update fields: name, rating (take higher), occupation/notes if provided
+                existing.name = new_name
+                existing.rating = higher_rating(existing.rating, new_rating)
+                if new_occupation:
+                    existing.occupation = new_occupation
+                if new_notes:
+                    existing.notes = new_notes
+                existing.save()
+                _apply_sessions(existing, sessions, session_date, request.user)
+                messages.success(
+                    request,
+                    f'"{existing.name}" already exists — updated with new info and sessions.'
                 )
+                return redirect('student_profile', pk=existing.pk)
+
+            # ── New student ──
+            student = form.save(commit=False)
+            student.created_by = request.user
+            student.rating = new_rating
+            student.save()
+            _apply_sessions(student, sessions, session_date, request.user)
             messages.success(request, f'Student "{student.name}" added successfully.')
             return redirect('student_profile', pk=student.pk)
     else:

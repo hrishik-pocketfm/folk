@@ -56,9 +56,9 @@
 
       <div style="display:flex;flex-direction:column;gap:8px">
         {% for student in students %}
-        <a href="{% url 'student_profile' student.pk %}" style="text-decoration:none">
-          <div class="spiritual-card" style="padding:12px 14px;display:flex;align-items:center;gap:12px">
-            <!-- Avatar -->
+        <div class="spiritual-card" style="padding:12px 14px">
+          <!-- Top row: avatar + name + rating -->
+          <a href="{% url 'student_profile' student.pk %}" style="text-decoration:none;display:flex;align-items:center;gap:12px">
             <div style="width:42px;height:42px;border-radius:50%;flex-shrink:0;
                         background:linear-gradient(135deg,#2a1000,#5a2800);
                         border:1.5px solid rgba(240,165,0,0.25);
@@ -96,8 +96,36 @@
               </div>
             </div>
             <i class="bi bi-chevron-right" style="color:var(--text-muted);font-size:0.8rem;flex-shrink:0"></i>
+          </a>
+
+          <!-- Action buttons (only if phone exists) -->
+          {% if student.phone_number %}
+          <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+            <a href="tel:{{ student.phone_number }}"
+               style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
+                      background:rgba(111,207,151,0.1);border:1px solid rgba(111,207,151,0.25);
+                      color:#6fcf97;border-radius:10px;padding:8px 4px;font-size:0.75rem;
+                      font-weight:700;text-decoration:none;min-height:36px">
+              <i class="bi bi-telephone-fill"></i> Call
+            </a>
+            <a href="https://wa.me/91{{ student.phone_number|slice:'-10' }}"
+               target="_blank"
+               style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
+                      background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);
+                      color:#25d366;border-radius:10px;padding:8px 4px;font-size:0.75rem;
+                      font-weight:700;text-decoration:none;min-height:36px">
+              <i class="bi bi-whatsapp"></i> WhatsApp
+            </a>
+            <a href="sms:{{ student.phone_number }}"
+               style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
+                      background:rgba(144,180,255,0.1);border:1px solid rgba(144,180,255,0.25);
+                      color:#90b4ff;border-radius:10px;padding:8px 4px;font-size:0.75rem;
+                      font-weight:700;text-decoration:none;min-height:36px">
+              <i class="bi bi-chat-fill"></i> SMS
+            </a>
           </div>
-        </a>
+          {% endif %}
+        </div>
         {% endfor %}
       </div>
     </div>
