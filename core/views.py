@@ -209,7 +209,24 @@ def student_profile(request, pk):
         'sessions': sessions,
         'add_form': add_form,
         'session_choices': SESSION_CHOICES,
+        'ratings': RATING_CHOICES,
     })
+
+
+@login_required
+def edit_student(request, pk):
+    student = get_object_or_404(Student, pk=pk, created_by=request.user)
+    if request.method == 'POST':
+        student.name       = request.POST.get('name', student.name).strip() or student.name
+        student.phone_number = request.POST.get('phone_number', '').strip()
+        student.occupation = request.POST.get('occupation', '').strip()
+        student.notes      = request.POST.get('notes', '').strip()
+        new_rating         = request.POST.get('rating', student.rating)
+        if new_rating in dict(RATING_CHOICES):
+            student.rating = new_rating
+        student.save()
+        messages.success(request, 'Student details updated.')
+    return redirect('student_profile', pk=pk)
 
 
 @login_required
