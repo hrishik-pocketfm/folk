@@ -83,6 +83,12 @@
       {% if student.occupation %}
       <span class="text-muted-spiritual"><i class="bi bi-briefcase me-1"></i>{{ student.occupation }}</span>
       {% endif %}
+      {% if student.college %}
+      <span class="text-muted-spiritual"><i class="bi bi-building me-1"></i>{{ student.college.name }}</span>
+      {% endif %}
+      {% if student.gender %}
+      <span class="text-muted-spiritual">{% if student.gender == 'M' %}👨 Male{% else %}👩 Female{% endif %}</span>
+      {% endif %}
       {% if student.notes %}
       <span style="color:var(--text-muted);font-size:0.85rem;font-style:italic">"{{ student.notes }}"</span>
       {% endif %}
@@ -123,10 +129,48 @@
         <input type="text" name="occupation" class="spiritual-input"
                value="{{ student.occupation }}">
       </div>
-      <div style="margin-bottom:14px">
+      <div style="margin-bottom:11px">
         <label class="form-label">Notes</label>
         <textarea name="notes" class="spiritual-input" rows="3">{{ student.notes }}</textarea>
       </div>
+      <!-- Gender -->
+      <div style="margin-bottom:11px">
+        <label class="form-label">Gender</label>
+        <div style="display:flex;gap:8px">
+          {% for val, lbl in gender_choices %}
+          <label style="flex:1;cursor:pointer">
+            <input type="radio" name="gender" value="{{ val }}" class="edit-gender-radio" style="display:none"
+                   {% if student.gender == val %}checked{% endif %}>
+            <div class="edit-gender-card spiritual-card {% if student.gender == val %}rating-selected{% endif %}"
+                 style="padding:8px 4px;text-align:center;border-radius:10px">
+              <div style="font-size:0.85rem">{% if val == 'M' %}👨{% else %}👩{% endif %}</div>
+              <div style="font-size:0.65rem;font-weight:700;color:{% if val == 'M' %}#90b4ff{% else %}#f9a8d4{% endif %}">{{ lbl }}</div>
+            </div>
+          </label>
+          {% endfor %}
+          <label style="flex:1;cursor:pointer">
+            <input type="radio" name="gender" value="" class="edit-gender-radio" style="display:none"
+                   {% if not student.gender %}checked{% endif %}>
+            <div class="edit-gender-card spiritual-card {% if not student.gender %}rating-selected{% endif %}"
+                 style="padding:8px 4px;text-align:center;border-radius:10px">
+              <div style="font-size:0.85rem">—</div>
+              <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted)">Skip</div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <!-- College -->
+      {% if colleges %}
+      <div style="margin-bottom:11px">
+        <label class="form-label">College</label>
+        <select name="college" class="spiritual-input" style="color-scheme:dark">
+          <option value="">— None —</option>
+          {% for college in colleges %}
+          <option value="{{ college.pk }}" {% if student.college_id == college.pk %}selected{% endif %}>{{ college.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
       <!-- Rating -->
       <div style="margin-bottom:18px">
         <label class="form-label">Interest Rating</label>
@@ -240,6 +284,20 @@
       ? '<i class="bi bi-pencil me-1"></i>Edit'
       : '<i class="bi bi-x me-1"></i>Close';
   }
+
+  // Gender card tap in edit form
+  document.querySelectorAll('.edit-gender-radio').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      document.querySelectorAll('.edit-gender-card').forEach(function(c) { c.classList.remove('rating-selected'); });
+      this.closest('label').querySelector('.edit-gender-card').classList.add('rating-selected');
+    });
+  });
+  document.querySelectorAll('.edit-gender-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      var radio = this.closest('label').querySelector('.edit-gender-radio');
+      radio.checked = true; radio.dispatchEvent(new Event('change'));
+    });
+  });
 
   // Rating card tap in edit form
   document.querySelectorAll('.edit-rating-radio').forEach(function(radio) {

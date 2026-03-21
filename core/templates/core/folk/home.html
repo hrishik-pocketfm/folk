@@ -1,0 +1,76 @@
+{% extends 'core/folk/base_folk.html' %}
+{% block title %}FOLK Overview{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:20px">
+  <h1 style="color:var(--primary)"><i class="bi bi-house-heart me-2"></i>FOLK Program</h1>
+  <p style="color:var(--muted);font-size:0.88rem;margin:0">Community spiritual sessions</p>
+</div>
+
+<!-- Stats row -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px">
+  <div class="fk-card" style="padding:16px 12px;text-align:center">
+    <div style="font-size:1.6rem;font-weight:800;color:var(--primary)">{{ sessions_count }}</div>
+    <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px">Sessions</div>
+  </div>
+  <div class="fk-card" style="padding:16px 12px;text-align:center">
+    <div style="font-size:1.6rem;font-weight:800;color:#d97706">{{ followup_count }}</div>
+    <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px">Pending</div>
+  </div>
+  <div class="fk-card" style="padding:16px 12px;text-align:center">
+    <div style="font-size:1.6rem;font-weight:800;color:#7c3aed">{{ colleges_count }}</div>
+    <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px">Colleges</div>
+  </div>
+</div>
+
+<!-- Nav cards -->
+<div style="display:flex;flex-direction:column;gap:12px">
+
+  <a href="{% url 'folk_sessions_list' %}" style="text-decoration:none">
+    <div class="fk-card" style="padding:18px 16px;display:flex;align-items:center;gap:14px">
+      <div style="width:48px;height:48px;border-radius:14px;background:#fff7ed;
+                  display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="bi bi-calendar-check-fill" style="font-size:1.5rem;color:var(--primary)"></i>
+      </div>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:1rem;color:var(--text)">Attendance Tracking</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:2px">Weekly FOLK sessions & chanting rounds</div>
+      </div>
+      <i class="bi bi-chevron-right" style="color:var(--muted)"></i>
+    </div>
+  </a>
+
+  <a href="{% url 'folk_followup_list' %}" style="text-decoration:none">
+    <div class="fk-card" style="padding:18px 16px;display:flex;align-items:center;gap:14px">
+      <div style="width:48px;height:48px;border-radius:14px;background:#fffbeb;
+                  display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="bi bi-person-lines-fill" style="font-size:1.5rem;color:#d97706"></i>
+      </div>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:1rem;color:var(--text)">New FOLK Follow-up</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:2px">
+          Track & follow up new attendees
+          {% if followup_count %}<span style="background:#fef3c7;color:#92400e;border-radius:8px;padding:1px 7px;font-size:0.7rem;font-weight:800;margin-left:4px">{{ followup_count }} pending</span>{% endif %}
+        </div>
+      </div>
+      <i class="bi bi-chevron-right" style="color:var(--muted)"></i>
+    </div>
+  </a>
+
+  <a href="{% url 'colleges_list' %}" style="text-decoration:none">
+    <div class="fk-card" style="padding:18px 16px;display:flex;align-items:center;gap:14px">
+      <div style="width:48px;height:48px;border-radius:14px;background:#f5f3ff;
+                  display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="bi bi-building" style="font-size:1.5rem;color:#7c3aed"></i>
+      </div>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:1rem;color:var(--text)">Colleges</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:2px">Manage colleges & view their students</div>
+      </div>
+      <i class="bi bi-chevron-right" style="color:var(--muted)"></i>
+    </div>
+  </a>
+
+</div>
+{% endblock %}

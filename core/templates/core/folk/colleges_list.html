@@ -1,0 +1,56 @@
+{% extends 'core/folk/base_folk.html' %}
+{% block title %}Colleges — FOLK{% endblock %}
+{% block nav_colleges %}active{% endblock %}
+
+{% block content %}
+<h1 style="margin-bottom:4px">Colleges</h1>
+<p style="color:var(--muted);font-size:0.88rem;margin-bottom:20px">Manage colleges to tag students</p>
+
+<!-- Add college form -->
+<div class="fk-card" style="padding:16px;margin-bottom:20px">
+  <h3 style="margin-bottom:12px"><i class="bi bi-plus-circle me-1" style="color:var(--primary)"></i>Add College</h3>
+  <form method="post" autocomplete="off">
+    {% csrf_token %}
+    <div style="margin-bottom:10px">
+      <label class="fk-label">College Name *</label>
+      <input type="text" name="name" class="fk-input" placeholder="e.g. NIT Raipur" required autocomplete="off">
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="fk-label">Location (optional)</label>
+      <input type="text" name="location" class="fk-input" placeholder="City or address" autocomplete="off">
+    </div>
+    <button type="submit" class="fk-btn w-100">
+      <i class="bi bi-building me-1"></i>Add College
+    </button>
+  </form>
+</div>
+
+<!-- Colleges list -->
+{% if colleges %}
+<div style="display:flex;flex-direction:column;gap:8px">
+  {% for college in colleges %}
+  <a href="{% url 'college_detail' college.pk %}" style="text-decoration:none">
+    <div class="fk-card" style="padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:40px;height:40px;border-radius:12px;background:#f5f3ff;flex-shrink:0;
+                  display:flex;align-items:center;justify-content:center">
+        <i class="bi bi-building" style="font-size:1.2rem;color:#7c3aed"></i>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:800;color:var(--text)">{{ college.name }}</div>
+        <div style="font-size:0.78rem;color:var(--muted)">
+          {% if college.location %}{{ college.location }} · {% endif %}
+          {{ college.student_count }} student{{ college.student_count|pluralize }}
+        </div>
+      </div>
+      <i class="bi bi-chevron-right" style="color:var(--muted)"></i>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="fk-card" style="padding:32px;text-align:center">
+  <i class="bi bi-building" style="font-size:2.5rem;color:#d1d5db;display:block;margin-bottom:10px"></i>
+  <p style="color:var(--muted);font-size:0.88rem;margin:0">No colleges added yet.</p>
+</div>
+{% endif %}
+{% endblock %}

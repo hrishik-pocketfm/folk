@@ -1,0 +1,149 @@
+{% extends 'core/folk/base_folk.html' %}
+{% block title %}Session — FOLK{% endblock %}
+{% block nav_sessions %}active{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+  <a href="{% url 'folk_sessions_list' %}" class="fk-back"><i class="bi bi-arrow-left"></i> Back</a>
+  <form method="post" action="{% url 'folk_session_delete' session.pk %}" id="del-form">{% csrf_token %}<input type="hidden" name="action" value="delete"></form>
+  <button onclick="document.getElementById('del-modal').style.display='flex'"
+          style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:10px;
+                 padding:6px 14px;font-size:0.78rem;font-weight:700;cursor:pointer;min-height:36px">
+    <i class="bi bi-trash"></i>
+  </button>
+</div>
+
+<!-- Session info -->
+<div class="fk-card" style="padding:16px;margin-bottom:16px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="width:52px;height:52px;border-radius:14px;background:#fff7ed;flex-shrink:0;
+                display:flex;flex-direction:column;align-items:center;justify-content:center">
+      <div style="font-size:0.58rem;font-weight:800;color:var(--primary);text-transform:uppercase">{{ session.date|date:"M" }}</div>
+      <div style="font-size:1.4rem;font-weight:800;color:var(--primary);line-height:1">{{ session.date|date:"d" }}</div>
+    </div>
+    <div>
+      <div style="font-weight:800;font-size:1rem">{{ session.date|date:"l, d F Y" }}</div>
+      <div style="color:var(--muted);font-size:0.8rem">
+        <i class="bi bi-people me-1"></i>{{ attendances.count }} attendees
+      </div>
+      {% if session.notes %}<div style="color:var(--muted);font-size:0.8rem;margin-top:2px">{{ session.notes }}</div>{% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Attendees -->
+<h2 style="margin-bottom:12px"><i class="bi bi-check2-circle me-1" style="color:var(--primary)"></i>Attendees</h2>
+
+{% if attendances %}
+<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+  {% for att in attendances %}
+  <div class="fk-card" style="padding:12px 14px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:38px;height:38px;border-radius:50%;background:#fff7ed;border:1.5px solid #fed7aa;
+                  display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--primary);flex-shrink:0">
+        {{ att.student.name|first|upper }}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:0.92rem">{{ att.student.name }}</div>
+        <div style="font-size:0.78rem;color:var(--muted)">
+          {{ att.student.phone_number|default:"No phone" }}
+          {% if att.is_new_folk %}<span class="fbadge fbadge-new" style="margin-left:4px">New</span>{% endif %}
+        </div>
+      </div>
+      <!-- Chanting rounds -->
+      <form method="post" style="display:flex;align-items:center;gap:6px">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_rounds">
+        <input type="hidden" name="student_id" value="{{ att.student.pk }}">
+        <input type="number" name="chanting_rounds" value="{{ att.chanting_rounds }}"
+               min="0" max="99"
+               style="width:50px;border:1.5px solid var(--border);border-radius:8px;padding:4px 6px;
+                      font-size:0.85rem;font-weight:700;text-align:center;font-family:'Nunito',sans-serif"
+               onchange="this.form.submit()">
+        <span style="font-size:0.7rem;color:var(--muted);white-space:nowrap">rounds</span>
+      </form>
+      <!-- Remove -->
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="remove">
+        <input type="hidden" name="student_id" value="{{ att.student.pk }}">
+        <button type="submit"
+                style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;
+                       border-radius:8px;padding:6px 10px;font-size:0.8rem;cursor:pointer;min-height:32px">
+          <i class="bi bi-x"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:24px 0;color:var(--muted);margin-bottom:20px">
+  <i class="bi bi-people" style="font-size:2rem;display:block;margin-bottom:8px"></i>
+  No attendees yet
+</div>
+{% endif %}
+
+<!-- Add student -->
+<h2 style="margin-bottom:12px"><i class="bi bi-person-plus me-1" style="color:var(--primary)"></i>Add Attendee</h2>
+{% if eligible_students %}
+<div class="fk-card" style="padding:16px">
+  <form method="post" autocomplete="off">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add">
+    <div style="margin-bottom:12px">
+      <label class="fk-label">Select Student</label>
+      <select name="student_id" class="fk-input" required>
+        <option value="">— Choose eligible student —</option>
+        {% for s in eligible_students %}
+        <option value="{{ s.pk }}">{{ s.name }}{% if s.phone_number %} · {{ s.phone_number }}{% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <div style="flex:1">
+        <label class="fk-label">Chanting Rounds</label>
+        <input type="number" name="chanting_rounds" class="fk-input" value="0" min="0" max="99"
+               style="text-align:center">
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding-bottom:10px">
+          <input type="checkbox" name="is_new_folk" value="1"
+                 style="width:18px;height:18px;accent-color:var(--primary)">
+          <span style="font-size:0.85rem;font-weight:700;color:var(--text)">New to FOLK</span>
+        </label>
+      </div>
+    </div>
+    <button type="submit" class="fk-btn w-100">
+      <i class="bi bi-person-check me-1"></i>Mark as Attended
+    </button>
+  </form>
+</div>
+{% else %}
+<div class="fk-card" style="padding:24px;text-align:center">
+  <p style="color:var(--muted);margin:0;font-size:0.88rem">No more eligible students to add.</p>
+</div>
+{% endif %}
+
+<!-- Delete confirm modal -->
+<div id="del-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);
+     z-index:200;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:18px;padding:28px 24px;max-width:340px;width:100%;text-align:center">
+    <div style="font-size:2rem;margin-bottom:10px">⚠️</div>
+    <h3 style="color:#dc2626">Delete Session?</h3>
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:24px">All attendance records for this session will be deleted.</p>
+    <div style="display:flex;gap:10px">
+      <button onclick="document.getElementById('del-modal').style.display='none'"
+              class="fk-btn-ghost" style="flex:1">Cancel</button>
+      <form method="post" action="{% url 'folk_session_delete' session.pk %}" style="flex:1">
+        {% csrf_token %}
+        <button type="submit" style="width:100%;background:#dc2626;border:none;color:#fff;
+                border-radius:14px;padding:10px;font-size:0.9rem;font-weight:800;cursor:pointer;min-height:44px;font-family:'Nunito',sans-serif">
+          Delete
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

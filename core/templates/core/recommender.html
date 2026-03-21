@@ -98,9 +98,29 @@
             <i class="bi bi-chevron-right" style="color:var(--text-muted);font-size:0.8rem;flex-shrink:0"></i>
           </a>
 
-          <!-- Action buttons (only if phone exists) -->
+          <!-- Call status buttons -->
+          <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+            {% for cs_val, cs_lbl in call_status_choices %}
+            <button type="button"
+                    onclick="setCallStatus(this,{{ student.pk }},'{{ selected_session }}','{{ cs_val }}')"
+                    data-status="{{ cs_val }}"
+                    data-sid="{{ student.pk }}"
+                    style="flex:1;border-radius:8px;padding:6px 2px;font-size:0.68rem;font-weight:700;
+                           cursor:pointer;min-height:32px;transition:all 0.15s;
+                           {% if student.call_status == cs_val %}
+                             {% if cs_val == 'C' %}background:rgba(111,207,151,0.25);border:1.5px solid #6fcf97;color:#6fcf97
+                             {% elif cs_val == 'NC' %}background:rgba(240,165,0,0.25);border:1.5px solid #f0a500;color:#f0a500
+                             {% elif cs_val == 'NA' %}background:rgba(144,180,255,0.25);border:1.5px solid #90b4ff;color:#90b4ff
+                             {% else %}background:rgba(255,99,99,0.25);border:1.5px solid #ff6363;color:#ff6363{% endif %}
+                           {% else %}background:transparent;border:1px solid var(--border);color:var(--text-muted){% endif %}">
+              {% if cs_val == 'C' %}✅ C{% elif cs_val == 'NC' %}❓ NC{% elif cs_val == 'NA' %}📵 NA{% else %}❌ NW{% endif %}
+            </button>
+            {% endfor %}
+          </div>
+
+          <!-- Phone / WA / SMS -->
           {% if student.phone_number %}
-          <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="display:flex;gap:8px;margin-top:8px">
             <a href="tel:{{ student.phone_number }}"
                style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
                       background:rgba(111,207,151,0.1);border:1px solid rgba(111,207,151,0.25);
@@ -108,13 +128,12 @@
                       font-weight:700;text-decoration:none;min-height:36px">
               <i class="bi bi-telephone-fill"></i> Call
             </a>
-            <a href="https://wa.me/{{ student.wa_number }}"
-               target="_blank"
+            <a href="https://wa.me/{{ student.wa_number }}" target="_blank"
                style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
                       background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);
                       color:#25d366;border-radius:10px;padding:8px 4px;font-size:0.75rem;
                       font-weight:700;text-decoration:none;min-height:36px">
-              <i class="bi bi-whatsapp"></i> WhatsApp
+              <i class="bi bi-whatsapp"></i> WA
             </a>
             <a href="sms:{{ student.phone_number }}"
                style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
@@ -156,4 +175,42 @@
 </div>
 {% endif %}
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = '{{ csrf_token }}';
+const STATUS_STYLES = {
+  'C':  {bg:'rgba(111,207,151,0.25)', border:'1.5px solid #6fcf97', color:'#6fcf97'},
+  'NC': {bg:'rgba(240,165,0,0.25)',   border:'1.5px solid #f0a500', color:'#f0a500'},
+  'NA': {bg:'rgba(144,180,255,0.25)', border:'1.5px solid #90b4ff', color:'#90b4ff'},
+  'NW': {bg:'rgba(255,99,99,0.25)',   border:'1.5px solid #ff6363', color:'#ff6363'},
+};
+function setCallStatus(btn, studentId, sessionType, status) {
+  const allBtns = document.querySelectorAll(`[data-sid="${studentId}"]`);
+  const isActive = btn.getAttribute('data-active') === '1';
+  allBtns.forEach(b => {
+    b.setAttribute('data-active','0');
+    b.style.background='transparent'; b.style.border='1px solid rgba(240,165,0,0.22)'; b.style.color='#b89060';
+  });
+  const newStatus = isActive ? '' : status;
+  if (!isActive) {
+    btn.setAttribute('data-active','1');
+    const s = STATUS_STYLES[status];
+    btn.style.background=s.bg; btn.style.border=s.border; btn.style.color=s.color;
+  }
+  fetch('{% url "update_call_status" %}', {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken':CSRF},
+    body:`student_id=${studentId}&session_type=${sessionType}&status=${newStatus}`
+  });
+}
+// Mark server-rendered active buttons
+document.querySelectorAll('[data-sid]').forEach(function(btn) {
+  const s = STATUS_STYLES[btn.dataset.status];
+  if (s && btn.style.background && btn.style.background !== 'transparent' && btn.style.background !== '') {
+    btn.setAttribute('data-active','1');
+  }
+});
+</script>
 {% endblock %}

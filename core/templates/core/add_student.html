@@ -45,6 +45,42 @@
                 placeholder="Any notes…">{{ form.notes.value|default:'' }}</textarea>
     </div>
 
+    <!-- Gender -->
+    <div style="margin-bottom:14px">
+      <label class="form-label">Gender</label>
+      <div style="display:flex;gap:8px">
+        {% for val, lbl in gender_choices %}
+        <label style="flex:1;cursor:pointer">
+          <input type="radio" name="gender" value="{{ val }}" class="gender-radio" style="display:none">
+          <div class="gender-card spiritual-card" style="padding:10px 6px;text-align:center;border-radius:12px">
+            <div style="font-size:1rem;margin-bottom:2px">{% if val == 'M' %}👨{% else %}👩{% endif %}</div>
+            <div style="font-size:0.72rem;font-weight:700;color:{% if val == 'M' %}#90b4ff{% else %}#f9a8d4{% endif %}">{{ lbl }}</div>
+          </div>
+        </label>
+        {% endfor %}
+        <label style="flex:1;cursor:pointer">
+          <input type="radio" name="gender" value="" class="gender-radio" style="display:none" checked>
+          <div class="gender-card spiritual-card" style="padding:10px 6px;text-align:center;border-radius:12px;border-color:var(--gold);background:rgba(240,165,0,0.1)">
+            <div style="font-size:1rem;margin-bottom:2px">—</div>
+            <div style="font-size:0.72rem;font-weight:700;color:var(--text-muted)">Skip</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- College -->
+    {% if colleges %}
+    <div style="margin-bottom:14px">
+      <label class="form-label">College (optional)</label>
+      <select name="college" class="spiritual-input" style="color-scheme:dark">
+        <option value="">— None —</option>
+        {% for college in colleges %}
+        <option value="{{ college.pk }}">{{ college.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
     <!-- Rating -->
     <div style="margin-bottom:20px">
       <label class="form-label">Interest Rating</label>
@@ -125,6 +161,23 @@
       cb.checked = !cb.checked;
       card.style.borderColor = cb.checked ? 'var(--gold)' : '';
       card.style.background  = cb.checked ? 'rgba(240,165,0,0.14)' : '';
+    });
+  });
+
+  // Gender radio toggle
+  document.querySelectorAll('.gender-radio').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      document.querySelectorAll('.gender-card').forEach(function(c) { c.style.borderColor=''; c.style.background=''; });
+      var card = this.closest('label').querySelector('.gender-card');
+      card.style.borderColor = 'var(--gold)';
+      card.style.background  = 'rgba(240,165,0,0.12)';
+    });
+  });
+  document.querySelectorAll('.gender-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      var radio = this.closest('label').querySelector('.gender-radio');
+      radio.checked = true;
+      radio.dispatchEvent(new Event('change'));
     });
   });
 

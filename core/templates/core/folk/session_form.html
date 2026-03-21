@@ -1,0 +1,29 @@
+{% extends 'core/folk/base_folk.html' %}
+{% block title %}New FOLK Session{% endblock %}
+{% block nav_sessions %}active{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+  <a href="{% url 'folk_sessions_list' %}" class="fk-back"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<h1 style="margin-bottom:4px">New Session</h1>
+<p style="color:var(--muted);font-size:0.88rem;margin-bottom:20px">Record a weekly FOLK session</p>
+
+<div class="fk-card" style="padding:20px">
+  <form method="post" autocomplete="off">
+    {% csrf_token %}
+    <div style="margin-bottom:14px">
+      <label class="fk-label">Date *</label>
+      <input type="date" name="date" class="fk-input" value="{{ today }}" required>
+    </div>
+    <div style="margin-bottom:20px">
+      <label class="fk-label">Notes (optional)</label>
+      <textarea name="notes" class="fk-input" rows="3" placeholder="Any notes for this session…"></textarea>
+    </div>
+    <button type="submit" class="fk-btn w-100">
+      <i class="bi bi-check-lg me-1"></i>Create Session
+    </button>
+  </form>
+</div>
+{% endblock %}

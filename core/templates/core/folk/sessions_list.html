@@ -1,0 +1,51 @@
+{% extends 'core/folk/base_folk.html' %}
+{% block title %}FOLK Sessions{% endblock %}
+{% block nav_sessions %}active{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+  <h1 style="margin:0">Sessions</h1>
+  <a href="{% url 'folk_session_new' %}" class="fk-btn" style="padding:0.5rem 1rem;font-size:0.85rem">
+    <i class="bi bi-plus-lg me-1"></i>New
+  </a>
+</div>
+
+{% if sessions %}
+<div style="display:flex;flex-direction:column;gap:10px">
+  {% for session in sessions %}
+  <a href="{% url 'folk_session_detail' session.pk %}" style="text-decoration:none">
+    <div class="fk-card" style="padding:16px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:46px;height:46px;border-radius:12px;background:#fff7ed;flex-shrink:0;
+                    display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div style="font-size:0.62rem;font-weight:800;color:var(--primary);text-transform:uppercase">
+            {{ session.date|date:"M" }}
+          </div>
+          <div style="font-size:1.3rem;font-weight:800;color:var(--primary);line-height:1">
+            {{ session.date|date:"d" }}
+          </div>
+        </div>
+        <div style="flex:1">
+          <div style="font-weight:800;color:var(--text)">{{ session.date|date:"l, d F Y" }}</div>
+          <div style="font-size:0.8rem;color:var(--muted);margin-top:2px">
+            <i class="bi bi-people me-1"></i>{{ session.attendances.count }} attendees
+            {% if session.notes %} · {{ session.notes|truncatechars:30 }}{% endif %}
+          </div>
+        </div>
+        <i class="bi bi-chevron-right" style="color:var(--muted)"></i>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="fk-card" style="padding:48px 20px;text-align:center">
+  <div style="font-size:3rem;margin-bottom:12px">🪔</div>
+  <h3 style="color:var(--muted)">No sessions yet</h3>
+  <p style="color:var(--muted);font-size:0.88rem">Tap New to record your first weekly session.</p>
+  <a href="{% url 'folk_session_new' %}" class="fk-btn" style="margin-top:8px">
+    <i class="bi bi-plus-lg me-1"></i>Create First Session
+  </a>
+</div>
+{% endif %}
+{% endblock %}
