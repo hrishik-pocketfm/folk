@@ -17,7 +17,7 @@
       --muted:   #78716c;
       --border:  #f3e8d8;
       --shadow:  0 2px 12px rgba(249,115,22,0.08);
-      --topbar-h:   56px;
+      --topbar-h:   76px;
       --botnav-h:   60px;
       --safe-bot:   env(safe-area-inset-bottom,0px);
     }
@@ -40,6 +40,41 @@
     .fk-back  { color:var(--muted); font-size:0.82rem; text-decoration:none; font-weight:700;
                 display:flex; align-items:center; gap:4px; }
     .fk-back:active { color:var(--primary); }
+    .fk-topbar-right {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:6px;
+    }
+    .fk-region-btn {
+      background:#fff7ed;
+      border:1px solid #fed7aa;
+      color:var(--primary-dark);
+      border-radius:999px;
+      padding:5px 10px;
+      font-size:0.72rem;
+      font-weight:700;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .fk-region-panel {
+      position:fixed;
+      top:calc(var(--topbar-h) + 8px);
+      right:14px;
+      left:14px;
+      z-index:110;
+      padding:14px;
+      display:none;
+    }
+    .fk-region-panel.open { display:block; }
+    .fk-region-close {
+      background:transparent;
+      border:none;
+      color:var(--muted);
+      font-size:1.1rem;
+      cursor:pointer;
+      padding:0;
+    }
 
     /* Bottom nav */
     .fk-nav {
@@ -139,8 +174,47 @@
 <header class="fk-topbar">
   <a href="{% url 'dashboard' %}" class="fk-back"><i class="bi bi-arrow-left"></i> Main App</a>
   <span class="fk-brand"><i class="bi bi-house-heart me-1"></i>FOLK</span>
-  <span style="font-size:0.78rem;color:var(--muted)">{{ user.name }}</span>
+  <div class="fk-topbar-right">
+    <button type="button" class="fk-region-btn" onclick="toggleFolkRegionPanel()">
+      <i class="bi bi-geo-alt-fill"></i>
+      {{ current_region.name|default:"All Regions" }}
+    </button>
+    <span style="font-size:0.78rem;color:var(--muted)">{{ user.name }}</span>
+  </div>
 </header>
+<div id="fk-region-panel" class="fk-card fk-region-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
+    <h3 style="margin:0;color:var(--primary-dark)"><i class="bi bi-pin-map me-1"></i>Region</h3>
+    <button type="button" class="fk-region-close" onclick="toggleFolkRegionPanel(false)">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <form method="post" action="{% url 'set_current_region' %}" style="margin-bottom:14px">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <label class="fk-label">Current Region</label>
+    <select name="region_id" class="fk-input" style="margin-bottom:10px">
+      <option value="">All Regions</option>
+      {% for region in all_regions %}
+      <option value="{{ region.pk }}" {% if current_region and current_region.pk == region.pk %}selected{% endif %}>
+        {{ region.name }}
+      </option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="fk-btn w-100">Save Region</button>
+  </form>
+
+  <form method="post" action="{% url 'create_region' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <label class="fk-label">Create New Region</label>
+    <div style="display:flex;gap:8px">
+      <input type="text" name="name" class="fk-input" placeholder="Region name" maxlength="120">
+      <button type="submit" class="fk-btn-ghost" style="border-radius:12px">Add</button>
+    </div>
+  </form>
+</div>
 
 <!-- Content -->
 <div class="fk-wrap">
@@ -169,5 +243,24 @@
 </nav>
 
 {% block extra_js %}{% endblock %}
+<script>
+  function toggleFolkRegionPanel(forceOpen) {
+    var panel = document.getElementById('fk-region-panel');
+    if (!panel) return;
+    if (typeof forceOpen === 'boolean') {
+      panel.classList.toggle('open', forceOpen);
+      return;
+    }
+    panel.classList.toggle('open');
+  }
+
+  document.addEventListener('click', function(event) {
+    var panel = document.getElementById('fk-region-panel');
+    if (!panel || !panel.classList.contains('open')) return;
+    var trigger = event.target.closest('.fk-region-btn');
+    if (trigger || panel.contains(event.target)) return;
+    panel.classList.remove('open');
+  });
+</script>
 </body>
 </html>

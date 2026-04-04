@@ -19,7 +19,10 @@
         <a href="{% url 'student_profile' fu.student.pk %}" style="font-weight:800;color:var(--text);text-decoration:none">
           {{ fu.student.name }}
         </a>
-        <div style="font-size:0.78rem;color:var(--muted)">{{ fu.student.phone_number|default:"No phone" }}</div>
+        <div style="font-size:0.78rem;color:var(--muted)">
+          {{ fu.student.phone_number|default:"No phone" }}
+          {% if fu.student.region %} · {{ fu.student.region.name }}{% endif %}
+        </div>
       </div>
       <span style="font-size:0.68rem;font-weight:800;padding:3px 10px;border-radius:8px;
                    {% if fu.status == 'PENDING' %}background:#fffbeb;color:#d97706;border:1px solid #fde68a

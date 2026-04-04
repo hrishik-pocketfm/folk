@@ -17,6 +17,8 @@ urlpatterns = [
     # Recommender
     path('recommender/', views.recommender, name='recommender'),
     path('recommender/call-status/', views.update_call_status, name='update_call_status'),
+    path('regions/select/', views.set_current_region, name='set_current_region'),
+    path('regions/create/', views.create_region, name='create_region'),
 
     # Admin
     path('users/', views.user_list, name='user_list'),

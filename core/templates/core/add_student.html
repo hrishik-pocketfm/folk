@@ -81,6 +81,21 @@
     </div>
     {% endif %}
 
+    {% if regions %}
+    <div style="margin-bottom:14px">
+      <label class="form-label">Region</label>
+      <select name="region" class="spiritual-input" style="color-scheme:dark">
+        <option value="">— Unassigned —</option>
+        {% for region in regions %}
+        <option value="{{ region.pk }}"
+                {% if form.data.region == region.pk|stringformat:'s' or not form.data and current_region and current_region.pk == region.pk %}selected{% endif %}>
+          {{ region.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
     <!-- Rating -->
     <div style="margin-bottom:20px">
       <label class="form-label">Interest Rating</label>

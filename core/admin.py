@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, Student, StudentSession
+from .models import User, Student, StudentSession, Region
 
 
 @admin.register(User)
@@ -22,11 +22,17 @@ class UserAdmin(BaseUserAdmin):
     )
 
 
+@admin.register(Region)
+class RegionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'created_by', 'created_at')
+    search_fields = ('name',)
+
+
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'phone_number', 'occupation', 'created_by', 'created_at')
-    search_fields = ('name', 'phone_number')
-    list_filter = ('created_by',)
+    list_display = ('name', 'phone_number', 'region', 'occupation', 'created_by', 'created_at')
+    search_fields = ('name', 'phone_number', 'region__name')
+    list_filter = ('created_by', 'region')
 
 
 @admin.register(StudentSession)

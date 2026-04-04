@@ -100,6 +100,23 @@ class College(models.Model):
         return self.name
 
 
+class Region(models.Model):
+    name = models.CharField(max_length=120, unique=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='regions_created'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Student(models.Model):
     name = models.CharField(max_length=150)
     phone_number = models.CharField(max_length=15, blank=True)
@@ -108,6 +125,12 @@ class Student(models.Model):
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
     college = models.ForeignKey(
         College,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='students'
+    )
+    region = models.ForeignKey(
+        Region,
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='students'

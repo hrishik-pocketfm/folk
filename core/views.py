@@ -8,13 +8,21 @@ from django.http import JsonResponse
 from django.db.models import Count, Q
 
 from .models import (
-    User, Student, StudentSession, College, CallStatus,
+    User, Student, StudentSession, College, Region, CallStatus,
     FolkSession, FolkAttendance, NewFolkFollowup,
     SESSION_CHOICES, RATING_CHOICES, RATING_SORT,
     CALL_STATUS_CHOICES, FOLLOWUP_STATUS_CHOICES, GENDER_CHOICES,
     higher_rating,
 )
 from .forms import LoginForm, StudentForm, AddSessionForm, UserCreateForm
+from .utils import (
+    REGION_SESSION_KEY,
+    DEFAULT_WHATSAPP_TEMPLATE,
+    apply_region_filter,
+    get_current_region,
+    get_level_no,
+    get_upcoming_sunday,
+)
 
 
 # ─── Decorators ──────────────────────────────────────────────────────────────
@@ -37,10 +45,23 @@ def _student_scope(request, pk):
     return get_object_or_404(Student, Q(created_by=request.user) | Q(created_by=None), pk=pk)
 
 
-def get_recommendations(session_type, user):
-    user_student_ids = set(
-        Student.objects.filter(created_by=user).values_list('pk', flat=True)
-    )
+def _redirect_back(request, fallback='dashboard'):
+    return redirect(request.POST.get('next') or request.GET.get('next') or fallback)
+
+
+def _region_from_request(request):
+    region_id = (request.POST.get('region') or '').strip()
+    if not region_id:
+        return None
+    return Region.objects.filter(pk=region_id).first()
+
+
+def get_recommendations(session_type, user, request=None):
+    students_qs = Student.objects.filter(created_by=user)
+    if request is not None:
+        students_qs = apply_region_filter(students_qs, request)
+
+    user_student_ids = set(students_qs.values_list('pk', flat=True))
     attended_L1 = set(StudentSession.objects.filter(session_type='L1', student_id__in=user_student_ids).values_list('student_id', flat=True))
     attended_L2 = set(StudentSession.objects.filter(session_type='L2', student_id__in=user_student_ids).values_list('student_id', flat=True))
     attended_L3 = set(StudentSession.objects.filter(session_type='L3', student_id__in=user_student_ids).values_list('student_id', flat=True))
@@ -99,7 +120,7 @@ def get_recommendations(session_type, user):
                 cs.student_id: cs.status
                 for cs in CallStatus.objects.filter(student_id__in=ids, session_type=session_type)
             }
-            students_list = list(Student.objects.filter(pk__in=ids).prefetch_related('sessions'))
+            students_list = list(Student.objects.filter(pk__in=ids).select_related('region').prefetch_related('sessions'))
             for s in students_list:
                 s.call_status = call_status_map.get(s.pk, '')
             students_list.sort(key=lambda s: (
@@ -145,15 +166,19 @@ def logout_view(request):
 @login_required
 def dashboard(request):
     query = request.GET.get('q', '').strip()
-    students = (Student.objects.filter(created_by=request.user).prefetch_related('sessions').order_by('-created_at'))
+    students = apply_region_filter(
+        Student.objects.filter(created_by=request.user).select_related('region').prefetch_related('sessions').order_by('-created_at'),
+        request,
+    )
     if query:
-        students = students.filter(name__icontains=query)
+        students = students.filter(Q(name__icontains=query) | Q(phone_number__icontains=query))
     return render(request, 'core/dashboard.html', {'students': students, 'query': query})
 
 
 @login_required
 def add_student(request):
     colleges = College.objects.order_by('name')
+    regions = Region.objects.order_by('name')
     if request.method == 'POST':
         form = StudentForm(request.POST)
         if form.is_valid():
@@ -166,6 +191,7 @@ def add_student(request):
             new_notes    = form.cleaned_data.get('notes', '')
             new_gender   = request.POST.get('gender', '')
             college_id   = request.POST.get('college') or None
+            region       = _region_from_request(request)
 
             existing = None
             if phone:
@@ -180,6 +206,7 @@ def add_student(request):
                 if college_id:
                     try:    existing.college_id = int(college_id)
                     except: pass
+                existing.region = region
                 existing.save()
                 _apply_sessions(existing, sessions, session_date, request.user)
                 messages.success(request, f'"{existing.name}" already exists — updated.')
@@ -189,6 +216,7 @@ def add_student(request):
             student.created_by = request.user
             student.rating     = new_rating
             student.gender     = new_gender
+            student.region     = region
             if college_id:
                 try:    student.college_id = int(college_id)
                 except: pass
@@ -201,6 +229,7 @@ def add_student(request):
     return render(request, 'core/add_student.html', {
         'form': form, 'session_choices': SESSION_CHOICES,
         'ratings': RATING_CHOICES, 'gender_choices': GENDER_CHOICES, 'colleges': colleges,
+        'regions': regions,
     })
 
 
@@ -209,10 +238,12 @@ def student_profile(request, pk):
     student  = _student_scope(request, pk)
     sessions = student.sessions.select_related('added_by').order_by('date_attended')
     colleges = College.objects.order_by('name')
+    regions = Region.objects.order_by('name')
     return render(request, 'core/student_profile.html', {
         'student': student, 'sessions': sessions,
         'add_form': AddSessionForm(), 'session_choices': SESSION_CHOICES,
         'ratings': RATING_CHOICES, 'gender_choices': GENDER_CHOICES, 'colleges': colleges,
+        'regions': regions,
     })
 
 
@@ -236,6 +267,7 @@ def edit_student(request, pk):
             except: pass
         else:
             student.college = None
+        student.region = _region_from_request(request)
         student.save()
         messages.success(request, 'Student details updated.')
     return redirect('student_profile', pk=pk)
@@ -272,10 +304,15 @@ def delete_student(request, pk):
 @login_required
 def recommender(request):
     session_type = request.GET.get('session', '')
-    groups = get_recommendations(session_type, request.user) if session_type in dict(SESSION_CHOICES) else []
+    upcoming_sunday = get_upcoming_sunday()
+    groups = get_recommendations(session_type, request.user, request) if session_type in dict(SESSION_CHOICES) else []
     return render(request, 'core/recommender.html', {
         'session_choices': SESSION_CHOICES, 'selected_session': session_type,
         'groups': groups, 'call_status_choices': CALL_STATUS_CHOICES,
+        'whatsapp_template': DEFAULT_WHATSAPP_TEMPLATE,
+        'selected_level_no': get_level_no(session_type),
+        'upcoming_sunday': upcoming_sunday,
+        'upcoming_sunday_label': upcoming_sunday.strftime('%d %B %Y'),
     })
 
 
@@ -296,6 +333,40 @@ def update_call_status(request):
                 )
             return JsonResponse({'ok': True, 'status': status})
     return JsonResponse({'ok': False}, status=400)
+
+
+@login_required
+def set_current_region(request):
+    if request.method == 'POST':
+        region_id = (request.POST.get('region_id') or '').strip()
+        if region_id:
+            region = get_object_or_404(Region, pk=region_id)
+            request.session[REGION_SESSION_KEY] = region.pk
+            messages.success(request, f'Current region switched to "{region.name}".')
+        else:
+            request.session.pop(REGION_SESSION_KEY, None)
+            messages.success(request, 'Showing students from all regions.')
+    return _redirect_back(request)
+
+
+@login_required
+def create_region(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if not name:
+            messages.error(request, 'Region name is required.')
+            return _redirect_back(request)
+
+        existing = Region.objects.filter(name__iexact=name).first()
+        if existing:
+            request.session[REGION_SESSION_KEY] = existing.pk
+            messages.success(request, f'Region "{existing.name}" already exists, so it is now selected.')
+            return _redirect_back(request)
+
+        region = Region.objects.create(name=name, created_by=request.user)
+        request.session[REGION_SESSION_KEY] = region.pk
+        messages.success(request, f'Region "{region.name}" created and selected.')
+    return _redirect_back(request)
 
 
 # ─── Admin User Management ────────────────────────────────────────────────────
@@ -327,7 +398,11 @@ def user_add(request):
 def folk_home(request):
     return render(request, 'core/folk/home.html', {
         'sessions_count': FolkSession.objects.count(),
-        'followup_count': NewFolkFollowup.objects.filter(status='PENDING').count(),
+        'followup_count': apply_region_filter(
+            NewFolkFollowup.objects.filter(status='PENDING'),
+            request,
+            field_name='student__region',
+        ).count(),
         'colleges_count': College.objects.count(),
     })
 
@@ -356,9 +431,20 @@ def folk_session_new(request):
 
 @login_required
 def folk_session_detail(request, pk):
-    session      = get_object_or_404(FolkSession, pk=pk)
-    attendances  = session.attendances.select_related('student').order_by('student__name')
+    session = get_object_or_404(FolkSession, pk=pk)
+    attendee_query = request.GET.get('q', '').strip()
+    attendances = apply_region_filter(
+        session.attendances.select_related('student', 'student__region').order_by('student__name'),
+        request,
+        field_name='student__region',
+    )
+    if attendee_query:
+        attendances = attendances.filter(
+            Q(student__name__icontains=attendee_query) |
+            Q(student__phone_number__icontains=attendee_query)
+        )
     attended_ids = set(attendances.values_list('student_id', flat=True))
+    all_attended_ids = set(session.attendances.values_list('student_id', flat=True))
 
     # Eligible: male/ungendered, 2+ VSC sessions, not yet attending this session
     vsc_counts = (
@@ -368,9 +454,10 @@ def folk_session_detail(request, pk):
         .annotate(cnt=Count('session_type', distinct=True))
     )
     eligible_ids = {row['student_id'] for row in vsc_counts if row['cnt'] >= 2}
-    eligible_students = (
-        Student.objects.filter(pk__in=eligible_ids)
-        .exclude(gender='F').exclude(pk__in=attended_ids).order_by('name')
+    eligible_students = apply_region_filter(
+        Student.objects.filter(pk__in=eligible_ids).select_related('region')
+        .exclude(gender='F').exclude(pk__in=all_attended_ids).order_by('name'),
+        request,
     )
 
     if request.method == 'POST':
@@ -378,7 +465,7 @@ def folk_session_detail(request, pk):
         student_id = request.POST.get('student_id')
 
         if action == 'add' and student_id:
-            student = get_object_or_404(Student, pk=student_id)
+            student = get_object_or_404(eligible_students, pk=student_id)
             rounds  = int(request.POST.get('chanting_rounds', 0) or 0)
             is_new  = request.POST.get('is_new_folk') == '1'
             FolkAttendance.objects.get_or_create(
@@ -404,6 +491,7 @@ def folk_session_detail(request, pk):
 
     return render(request, 'core/folk/session_detail.html', {
         'session': session, 'attendances': attendances, 'eligible_students': eligible_students,
+        'attendee_query': attendee_query,
     })
 
 
@@ -418,8 +506,13 @@ def folk_session_delete(request, pk):
 
 @login_required
 def folk_followup_list(request):
+    followups_qs = apply_region_filter(
+        NewFolkFollowup.objects.select_related('student', 'student__region'),
+        request,
+        field_name='student__region',
+    )
     if request.method == 'POST':
-        followup = get_object_or_404(NewFolkFollowup, pk=request.POST.get('followup_id'))
+        followup = get_object_or_404(followups_qs, pk=request.POST.get('followup_id'))
         new_status = request.POST.get('status', '')
         notes      = request.POST.get('notes', '').strip()
         if new_status in dict(FOLLOWUP_STATUS_CHOICES):
@@ -430,7 +523,7 @@ def folk_followup_list(request):
         messages.success(request, 'Follow-up updated.')
         return redirect('folk_followup_list')
 
-    followups = NewFolkFollowup.objects.select_related('student').order_by('status', '-updated_at')
+    followups = followups_qs.order_by('status', '-updated_at')
     return render(request, 'core/folk/followup_list.html', {
         'followups': followups,
         'followup_status_choices': FOLLOWUP_STATUS_CHOICES,
@@ -447,14 +540,23 @@ def colleges_list(request):
             messages.success(request, f'College "{name}" added.')
         return redirect('colleges_list')
 
-    colleges = College.objects.annotate(student_count=Count('students')).order_by('name')
+    current_region = get_current_region(request)
+    if current_region:
+        colleges = College.objects.annotate(
+            student_count=Count('students', filter=Q(students__region=current_region), distinct=True)
+        ).order_by('name')
+    else:
+        colleges = College.objects.annotate(student_count=Count('students', distinct=True)).order_by('name')
     return render(request, 'core/folk/colleges_list.html', {'colleges': colleges})
 
 
 @login_required
 def college_detail(request, pk):
     college  = get_object_or_404(College, pk=pk)
-    students = Student.objects.filter(college=college).prefetch_related('sessions').order_by('name')
+    students = apply_region_filter(
+        Student.objects.filter(college=college).select_related('region').prefetch_related('sessions').order_by('name'),
+        request,
+    )
     return render(request, 'core/folk/college_detail.html', {'college': college, 'students': students})
 
 

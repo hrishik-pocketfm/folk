@@ -40,6 +40,11 @@
                         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">
               {{ student.name }}
             </div>
+            {% if student.region %}
+              <span style="font-size:0.63rem;font-weight:700;color:#90b4ff;
+                           background:rgba(144,180,255,0.1);border:1px solid rgba(144,180,255,0.25);
+                           border-radius:8px;padding:1px 6px;flex-shrink:0">{{ student.region.name }}</span>
+            {% endif %}
             {% if student.rating == 'HIGH' %}
               <span style="font-size:0.65rem;font-weight:700;color:#ff6b35;
                            background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.3);
