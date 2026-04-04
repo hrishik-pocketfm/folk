@@ -50,6 +50,7 @@
         <div style="font-weight:700;color:var(--text);font-size:0.92rem">{{ student.name }}</div>
         <div style="font-size:0.75rem;color:var(--muted)">
           {% if student.phone_number %}{{ student.phone_number }} · {% endif %}
+          {% if student.region %}{{ student.region.name }} · {% endif %}
           {% for sess in student.sessions.all %}
           <span class="fbadge {% if sess.session_type == 'L1' %}fbadge-l1{% elif sess.session_type == 'L2' %}fbadge-l2{% elif sess.session_type == 'L3' %}fbadge-l3{% else %}fbadge-folk{% endif %}">
             {{ sess.session_type }}

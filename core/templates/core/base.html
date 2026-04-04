@@ -22,7 +22,7 @@
       --text-muted:    #b89060;
       --border:        rgba(240, 165, 0, 0.22);
       --border-hover:  rgba(240, 165, 0, 0.5);
-      --topbar-h:      58px;
+      --topbar-h:      72px;
       --bottomnav-h:   62px;
       --safe-bottom:   env(safe-area-inset-bottom, 0px);
     }
@@ -77,6 +77,12 @@
     }
     .topbar-user {
       display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .topbar-user-row {
+      display: flex;
       align-items: center;
       gap: 10px;
     }
@@ -100,6 +106,43 @@
       white-space: nowrap;
     }
     .btn-logout:hover, .btn-logout:active { border-color: var(--gold); color: var(--gold); }
+    .topbar-region-btn {
+      background: rgba(240, 165, 0, 0.08);
+      border: 1px solid rgba(240, 165, 0, 0.25);
+      color: var(--gold-light);
+      font-size: 0.72rem;
+      padding: 5px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .topbar-region-btn:active {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    .region-panel {
+      position: fixed;
+      top: calc(var(--topbar-h) + 8px);
+      right: 14px;
+      left: 14px;
+      z-index: 110;
+      padding: 14px;
+      display: none;
+    }
+    .region-panel.open { display: block; }
+    .region-panel h3 {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      color: var(--gold-light);
+    }
+    .region-panel-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0;
+    }
 
     /* ── Bottom Tab Bar ── */
     .bottom-nav {
@@ -319,13 +362,56 @@
     <span class="topbar-brand">FOLK</span>
   </a>
   <div class="topbar-user">
-    <span class="topbar-name"><i class="bi bi-person-circle me-1"></i>{{ user.name }}</span>
-    <form method="post" action="{% url 'logout' %}" style="margin:0">
-      {% csrf_token %}
-      <button type="submit" class="btn-logout">Logout</button>
-    </form>
+    <button type="button" class="topbar-region-btn" onclick="toggleRegionPanel()">
+      <i class="bi bi-geo-alt-fill"></i>
+      {{ current_region.name|default:"All Regions" }}
+    </button>
+    <div class="topbar-user-row">
+      <span class="topbar-name"><i class="bi bi-person-circle me-1"></i>{{ user.name }}</span>
+      <form method="post" action="{% url 'logout' %}" style="margin:0">
+        {% csrf_token %}
+        <button type="submit" class="btn-logout">Logout</button>
+      </form>
+    </div>
   </div>
 </header>
+<div id="region-panel" class="spiritual-card region-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
+    <h3><i class="bi bi-pin-map me-1"></i>Region</h3>
+    <button type="button" class="region-panel-close" onclick="toggleRegionPanel(false)">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <form method="post" action="{% url 'set_current_region' %}" style="margin-bottom:14px">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <label class="form-label">Current Region</label>
+    <select name="region_id" class="spiritual-input" style="margin-bottom:10px;color-scheme:dark">
+      <option value="">All Regions</option>
+      {% for region in all_regions %}
+      <option value="{{ region.pk }}" {% if current_region and current_region.pk == region.pk %}selected{% endif %}>
+        {{ region.name }}
+      </option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn-gold w-100" style="font-size:0.9rem">
+      Save Region
+    </button>
+  </form>
+
+  <form method="post" action="{% url 'create_region' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <label class="form-label">Create New Region</label>
+    <div style="display:flex;gap:8px">
+      <input type="text" name="name" class="spiritual-input" placeholder="Region name" maxlength="120">
+      <button type="submit" class="btn-outline-gold" style="border-radius:12px;justify-content:center">
+        Add
+      </button>
+    </div>
+  </form>
+</div>
 {% endif %}
 
 <!-- Content -->
@@ -363,5 +449,26 @@
 {% endif %}
 
 {% block extra_js %}{% endblock %}
+{% if user.is_authenticated %}
+<script>
+  function toggleRegionPanel(forceOpen) {
+    var panel = document.getElementById('region-panel');
+    if (!panel) return;
+    if (typeof forceOpen === 'boolean') {
+      panel.classList.toggle('open', forceOpen);
+      return;
+    }
+    panel.classList.toggle('open');
+  }
+
+  document.addEventListener('click', function(event) {
+    var panel = document.getElementById('region-panel');
+    if (!panel || !panel.classList.contains('open')) return;
+    var trigger = event.target.closest('.topbar-region-btn');
+    if (trigger || panel.contains(event.target)) return;
+    panel.classList.remove('open');
+  });
+</script>
+{% endif %}
 </body>
 </html>

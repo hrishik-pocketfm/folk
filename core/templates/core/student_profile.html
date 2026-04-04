@@ -86,6 +86,9 @@
       {% if student.college %}
       <span class="text-muted-spiritual"><i class="bi bi-building me-1"></i>{{ student.college.name }}</span>
       {% endif %}
+      {% if student.region %}
+      <span class="text-muted-spiritual"><i class="bi bi-geo-alt me-1"></i>{{ student.region.name }}</span>
+      {% endif %}
       {% if student.gender %}
       <span class="text-muted-spiritual">{% if student.gender == 'M' %}👨 Male{% else %}👩 Female{% endif %}</span>
       {% endif %}
@@ -167,6 +170,17 @@
           <option value="">— None —</option>
           {% for college in colleges %}
           <option value="{{ college.pk }}" {% if student.college_id == college.pk %}selected{% endif %}>{{ college.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      {% if regions %}
+      <div style="margin-bottom:11px">
+        <label class="form-label">Region</label>
+        <select name="region" class="spiritual-input" style="color-scheme:dark">
+          <option value="">— Unassigned —</option>
+          {% for region in regions %}
+          <option value="{{ region.pk }}" {% if student.region_id == region.pk %}selected{% endif %}>{{ region.name }}</option>
           {% endfor %}
         </select>
       </div>

@@ -35,6 +35,16 @@
 <!-- Attendees -->
 <h2 style="margin-bottom:12px"><i class="bi bi-check2-circle me-1" style="color:var(--primary)"></i>Attendees</h2>
 
+<form method="get" style="margin-bottom:14px">
+  <div style="display:flex;gap:8px">
+    <input type="text" name="q" value="{{ attendee_query }}" class="fk-input"
+           placeholder="Search attendees by name or phone" style="flex:1;min-width:0">
+    <button type="submit" class="fk-btn" style="padding:0 16px;border-radius:12px;min-height:42px">
+      <i class="bi bi-search"></i>
+    </button>
+  </div>
+</form>
+
 {% if attendances %}
 <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
   {% for att in attendances %}
@@ -48,6 +58,7 @@
         <div style="font-weight:700;font-size:0.92rem">{{ att.student.name }}</div>
         <div style="font-size:0.78rem;color:var(--muted)">
           {{ att.student.phone_number|default:"No phone" }}
+          {% if att.student.region %} · {{ att.student.region.name }}{% endif %}
           {% if att.is_new_folk %}<span class="fbadge fbadge-new" style="margin-left:4px">New</span>{% endif %}
         </div>
       </div>
@@ -97,7 +108,7 @@
       <select name="student_id" class="fk-input" required>
         <option value="">— Choose eligible student —</option>
         {% for s in eligible_students %}
-        <option value="{{ s.pk }}">{{ s.name }}{% if s.phone_number %} · {{ s.phone_number }}{% endif %}</option>
+        <option value="{{ s.pk }}">{{ s.name }}{% if s.phone_number %} · {{ s.phone_number }}{% endif %}{% if s.region %} · {{ s.region.name }}{% endif %}</option>
         {% endfor %}
       </select>
     </div>
